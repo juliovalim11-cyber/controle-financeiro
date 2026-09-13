@@ -686,18 +686,35 @@
             renderApp();
         }
 
-        /* FUNÇÕES AJUSTADAS PARA LIMPAR CAMPOS AO ABRIR OS MODAIS */
+        /* FUNÇÕES CORRIGIDAS PARA MOBILE (LIMPEZA COMPLETA E MANUAL DOS INPUTS) */
         function openModal() { 
-            document.getElementById('form-transacao').reset();
+            const form = document.getElementById('form-transacao');
+            form.reset();
+            document.getElementById('trans-id').value = '';
+            document.getElementById('trans-tipo').value = 'despesa';
+            document.getElementById('trans-desc').value = '';
+            document.getElementById('trans-valor').value = '';
+            document.getElementById('trans-cat').value = '';
+            document.getElementById('trans-status').value = 'false';
+            
             document.getElementById('modal-transacao').classList.remove('hidden'); 
         }
+
         function closeModal() { 
             document.getElementById('modal-transacao').classList.add('hidden'); 
         }
+
         function openContaModal() { 
-            document.getElementById('form-conta').reset();
+            const form = document.getElementById('form-conta');
+            form.reset();
+            document.getElementById('conta-id').value = '';
+            document.getElementById('conta-desc').value = '';
+            document.getElementById('conta-venc').value = '';
+            document.getElementById('conta-valor').value = '';
+
             document.getElementById('modal-conta').classList.remove('hidden'); 
         }
+
         function closeContaModal() { 
             document.getElementById('modal-conta').classList.add('hidden'); 
         }
