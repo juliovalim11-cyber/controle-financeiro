@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0b1120; color: #f8fafc; }
+        .bg-card { background-color: #151e32; }
+        .bg-card-hover:hover { background-color: #1e293b; }
+        .border-custom { border-color: #1e293b; }
+        .nav-active { background-color: #2563eb; color: #ffffff; }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen overflow-hidden">
+
+    <!-- Overlay Mobile Sidebar -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
+
+    <!-- Sidebar (Drawer no Mobile) -->
+    <aside id="sidebar" class="fixed md:relative inset-y-0 left-0 z-50 w-64 bg-card border-r border-custom flex flex-col justify-between shrink-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div>
+            <div class="p-6 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wider text-white">DESPESAS</h1>
+                    <p class="text-xs text-slate-400 mt-1">CONTROLE FINANCEIRO</p>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <nav class="mt-2 px-4 space-y-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors nav-active">
+                    <i data-lucide="home" class="w-5 h-5"></i> Dashboard
+                </button>
+                <button onclick="switchTab('salario')" id="btn-salario" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                    <i data-lucide="wallet" class="w-5 h-5"></i> Salário
+                </button>
+                <button onclick="switchTab('contas')" id="btn-contas" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                    <i data-lucide="pin" class="w-5 h-5"></i> Contas fixas
+                </button>
+                <button onclick="switchTab('movimentacoes')" id="btn-movimentacoes" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+                    <i data-lucide="arrow-left-right" class="w-5 h-5"></i> Movimentações
+                </button>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
+        
+        <!-- Header TopBar -->
+        <header class="h-16 border-b border-custom bg-card/50 flex items-center justify-between px-4 md:px-8">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-300 p-1">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h2 id="page-title" class="text-xl md:text-3xl font-bold text-white truncate">Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-2 md:gap-4">
+                <span id="current-date" class="hidden sm:inline text-sm font-medium text-slate-400"></span>
+                <button onclick="openModal()" class="flex items-center gap-1.5 md:gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-medium px-3 md:px-4 py-2 rounded-lg transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Nova Transação</span><span class="sm:hidden">Novo</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="space-y-6">
+                <!-- Cards Superiores -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-card border border-custom p-4 md:p-5 rounded-xl">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-semibold tracking-wider uppercase mb-2">
+                            <i data-lucide="coins" class="w-4 h-4"></i> Saldo Disponível
+                        </div>
+                        <p id="card-saldo" class="text-2xl md:text-3xl font-bold text-emerald-400">R$ 0,00</p>
+                    </div>
+                    <div class="bg-card border border-custom p-4 md:p-5 rounded-xl">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-semibold tracking-wider uppercase mb-2">
+                            <i data-lucide="banknote" class="w-4 h-4"></i> Salário
+                        </div>
+                        <p id="card-salario" class="text-2xl md:text-3xl font-bold text-blue-500">R$ 0,00</p>
+                    </div>
+                    <div class="bg-card border border-custom p-4 md:p-5 rounded-xl">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-semibold tracking-wider uppercase mb-2">
+                            <i data-lucide="pin" class="w-4 h-4"></i> Contas Fixas
+                        </div>
+                        <p id="card-contas-fixas" class="text-2xl md:text-3xl font-bold text-amber-500">R$ 0,00</p>
+                    </div>
+                    <div class="bg-card border border-custom p-4 md:p-5 rounded-xl">
+                        <div class="flex items-center gap-2 text-slate-400 text-xs font-semibold tracking-wider uppercase mb-2">
+                            <i data-lucide="credit-card" class="w-4 h-4"></i> Despesas
+                        </div>
+                        <p id="card-despesas" class="text-2xl md:text-3xl font-bold text-red-500">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <!-- Seção Central -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div class="md:col-span-6 bg-card border border-custom p-4 md:p-6 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center gap-2 text-base font-bold text-white mb-4">
+                            <i data-lucide="pie-chart" class="w-5 h-5"></i> Comprometimento do salário
+                        </div>
+                        <div class="relative w-48 h-48 sm:w-56 sm:h-56 mx-auto my-4 flex items-center justify-center">
+                            <canvas id="chartComprometimento"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span id="chart-percent" class="text-2xl md:text-3xl font-bold text-white">0%</span>
+                                <span class="text-xs text-slate-400">comprometido</span>
+                            </div>
+                        </div>
+                        <div class="text-center text-sm text-slate-400 mt-2">
+                            Comprometido: <span id="chart-val-comprometido" class="font-semibold text-slate-200">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-6 bg-card border border-custom p-4 md:p-6 rounded-xl flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2 text-base font-bold text-white">
+                                <i data-lucide="list-todo" class="w-5 h-5"></i> Contas fixas
+                            </div>
+                            <button onclick="switchTab('contas')" class="text-xs text-blue-400 hover:underline">Ver todas</button>
+                        </div>
+                        <div id="dash-contas-list" class="flex-1 flex flex-col justify-center space-y-3">
+                            <p class="text-slate-500 text-center text-sm">Nenhuma conta cadastrada.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Stats (Flexível no Mobile) -->
+                <div class="bg-card border border-custom p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 text-xs md:text-sm text-slate-400">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-5 h-5 text-slate-300 shrink-0"></i>
+                        <span class="font-bold text-slate-200">Resumo financeiro</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-4 border-t sm:border-t-0 border-custom pt-2 sm:pt-0">
+                        <span>Receitas extras: <strong id="sum-receitas-extras" class="text-emerald-400">R$ 0,00</strong></span>
+                        <span class="hidden sm:inline">•</span>
+                        <span>Contas pagas: <strong id="sum-contas-pagas" class="text-blue-400">R$ 0,00</strong></span>
+                        <span class="hidden sm:inline">•</span>
+                        <span>Contas pendentes: <strong id="sum-contas-pendentes" class="text-amber-400">R$ 0,00</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SALÁRIO -->
+            <div id="tab-salario" class="hidden space-y-6">
+                <div class="bg-card border border-custom p-4 md:p-6 rounded-xl space-y-4 max-w-xl">
+                    <h3 class="text-lg font-bold text-white">Configurar Salário Base</h3>
+                    <p class="text-sm text-slate-400">Defina aqui o valor do seu salário mensal padrão.</p>
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <input type="number" id="input-salario-base" step="0.01" placeholder="Ex: 2930.00" class="flex-1 bg-slate-900 border border-custom rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        <button onclick="salvarSalarioBase()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: CONTAS FIXAS -->
+            <div id="tab-contas" class="hidden space-y-6">
+                <div class="flex justify-between items-center gap-2">
+                    <h3 class="text-lg font-bold text-white">Contas Recorrentes</h3>
+                    <button onclick="openContaModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-lg font-medium">Adicionar Conta</button>
+                </div>
+                <div class="bg-card border border-custom rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-sm min-w-[500px]">
+                        <thead class="bg-slate-900/60 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-4">Descrição</th>
+                                <th class="p-4">Vencimento</th>
+                                <th class="p-4">Valor</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-contas-body" class="divide-y divide-custom text-slate-300">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 4: MOVIMENTAÇÕES -->
+            <div id="tab-movimentacoes" class="hidden space-y-6">
+                <div class="flex justify-between items-center gap-2">
+                    <h3 class="text-lg font-bold text-white">Extrato de Movimentações</h3>
+                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-lg font-medium">Nova Transação</button>
+                </div>
+                <div class="bg-card border border-custom rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-sm min-w-[600px]">
+                        <thead class="bg-slate-900/60 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-4">Data</th>
+                                <th class="p-4">Tipo</th>
+                                <th class="p-4">Descrição</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4 text-right">Valor</th>
+                                <th class="p-4 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-movimentacoes-body" class="divide-y divide-custom text-slate-300">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Bottom Navigation Bar (Apenas para Celular) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-custom flex justify-around p-2 z-30">
+        <button onclick="switchTab('dashboard')" id="bnav-dashboard" class="flex flex-col items-center gap-1 text-blue-500 text-xs font-medium">
+            <i data-lucide="home" class="w-5 h-5"></i> Dash
+        </button>
+        <button onclick="switchTab('salario')" id="bnav-salario" class="flex flex-col items-center gap-1 text-slate-400 text-xs font-medium">
+            <i data-lucide="wallet" class="w-5 h-5"></i> Salário
+        </button>
+        <button onclick="switchTab('contas')" id="bnav-contas" class="flex flex-col items-center gap-1 text-slate-400 text-xs font-medium">
+            <i data-lucide="pin" class="w-5 h-5"></i> Contas
+        </button>
+        <button onclick="switchTab('movimentacoes')" id="bnav-movimentacoes" class="flex flex-col items-center gap-1 text-slate-400 text-xs font-medium">
+            <i data-lucide="arrow-left-right" class="w-5 h-5"></i> Extrato
+        </button>
+    </nav>
+
+    <!-- Modal Transação -->
+    <div id="modal-transacao" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-card border border-custom rounded-xl w-full max-w-md p-6 space-y-4">
+            <h3 class="text-lg font-bold text-white">Cadastrar Transação</h3>
+            <form id="form-transacao" onsubmit="salvarTransacao(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Tipo</label>
+                    <select id="trans-tipo" class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                        <option value="despesa">Despesa</option>
+                        <option value="receita">Receita Extra</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Descrição</label>
+                    <input type="text" id="trans-desc" required class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Valor (R$)</label>
+                    <input type="number" step="0.01" id="trans-valor" required class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Categoria</label>
+                    <input type="text" id="trans-cat" placeholder="Ex: Mercado, Lazer..." required class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-slate-400 hover:text-white text-sm">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Conta Fixa -->
+    <div id="modal-conta" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-card border border-custom rounded-xl w-full max-w-md p-6 space-y-4">
+            <h3 class="text-lg font-bold text-white">Cadastrar Conta Fixa</h3>
+            <form id="form-conta" onsubmit="salvarContaFixa(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Descrição</label>
+                    <input type="text" id="conta-desc" required placeholder="Ex: Aluguel, Internet..." class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Dia do Vencimento</label>
+                    <input type="number" min="1" max="31" id="conta-venc" required placeholder="Ex: 10" class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Valor (R$)</label>
+                    <input type="number" step="0.01" id="conta-valor" required class="w-full bg-slate-900 border border-custom rounded-lg p-2.5 text-white">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeContaModal()" class="px-4 py-2 text-slate-400 hover:text-white text-sm">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ESTADO GLOBAL DA APLICAÇÃO COM ARMAZENAMENTO NO LOCALSTORAGE
+        let state = {
+            salarioBase: parseFloat(localStorage.getItem('fin_salarioBase')) || 2930.00,
+            contasFixas: JSON.parse(localStorage.getItem('fin_contasFixas')) || [
+                { id: 1, desc: "Aluguel", dia: 5, valor: 1200.00, pago: false },
+                { id: 2, desc: "Internet", dia: 10, valor: 120.00, pago: false }
+            ],
+            movimentacoes: JSON.parse(localStorage.getItem('fin_movimentacoes')) || [
+                { id: 1, data: "2026-09-12", tipo: "despesa", desc: "Supermercado", cat: "Alimentação", valor: 350.00 }
+            ]
+        };
+
+        let chart = null;
+
+        function persistData() {
+            localStorage.setItem('fin_salarioBase', state.salarioBase);
+            localStorage.setItem('fin_contasFixas', JSON.stringify(state.contasFixas));
+            localStorage.setItem('fin_movimentacoes', JSON.stringify(state.movimentacoes));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR');
+            document.getElementById('input-salario-base').value = state.salarioBase;
+            initChart();
+            renderApp();
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function switchTab(tabId) {
+            ['dashboard', 'salario', 'contas', 'movimentacoes'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                
+                // Atualizar Botões do Sidebar
+                const btn = document.getElementById(`btn-${t}`);
+                if (btn) {
+                    btn.classList.remove('nav-active');
+                    btn.classList.add('text-slate-300');
+                }
+
+                // Atualizar Botões da Bottom Bar
+                const bnav = document.getElementById(`bnav-${t}`);
+                if (bnav) {
+                    bnav.classList.remove('text-blue-500');
+                    bnav.classList.add('text-slate-400');
+                }
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            // Ativar Sidebar
+            const btnActive = document.getElementById(`btn-${tabId}`);
+            if (btnActive) {
+                btnActive.classList.add('nav-active');
+                btnActive.classList.remove('text-slate-300');
+            }
+
+            // Ativar Bottom Bar
+            const bnavActive = document.getElementById(`bnav-${tabId}`);
+            if (bnavActive) {
+                bnavActive.classList.add('text-blue-500');
+                bnavActive.classList.remove('text-slate-400');
+            }
+
+            const titles = {
+                'dashboard': 'Dashboard',
+                'salario': 'Salário Base',
+                'contas': 'Contas Fixas',
+                'movimentacoes': 'Movimentações'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            // Fechar sidebar no celular após clicar em uma aba
+            if (!document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
+        }
+
+        function renderApp() {
+            persistData();
+
+            const totalContasFixas = state.contasFixas.reduce((acc, c) => acc + c.valor, 0);
+            const totalDespesas = state.movimentacoes.filter(m => m.tipo === 'despesa').reduce((acc, m) => acc + m.valor, 0);
+            const totalReceitasExtras = state.movimentacoes.filter(m => m.tipo === 'receita').reduce((acc, m) => acc + m.valor, 0);
+            
+            const totalComprometido = totalContasFixas + totalDespesas;
+            const saldoDisponivel = (state.salarioBase + totalReceitasExtras) - totalComprometido;
+
+            // Renderizar Cards
+            document.getElementById('card-saldo').innerText = formatCurrency(saldoDisponivel);
+            document.getElementById('card-salario').innerText = formatCurrency(state.salarioBase);
+            document.getElementById('card-contas-fixas').innerText = formatCurrency(totalContasFixas);
+            document.getElementById('card-despesas').innerText = formatCurrency(totalDespesas);
+
+            // Resumo Inferior
+            document.getElementById('sum-receitas-extras').innerText = formatCurrency(totalReceitasExtras);
+            const contasPagasVal = state.contasFixas.filter(c => c.pago).reduce((acc, c) => acc + c.valor, 0);
+            const contasPendentesVal = state.contasFixas.filter(c => !c.pago).reduce((acc, c) => acc + c.valor, 0);
+            document.getElementById('sum-contas-pagas').innerText = formatCurrency(contasPagasVal);
+            document.getElementById('sum-contas-pendentes').innerText = formatCurrency(contasPendentesVal);
+
+            // Atualizar Gráfico
+            const pctComprometido = state.salarioBase > 0 ? Math.min(100, Math.round((totalComprometido / state.salarioBase) * 100)) : 0;
+            document.getElementById('chart-percent').innerText = `${pctComprometido}%`;
+            document.getElementById('chart-val-comprometido').innerText = formatCurrency(totalComprometido);
+
+            if(chart) {
+                chart.data.datasets[0].data = [totalComprometido, Math.max(0, state.salarioBase - totalComprometido)];
+                chart.update();
+            }
+
+            // Renderizar Lista de Contas no Dashboard
+            const dashContasList = document.getElementById('dash-contas-list');
+            if(state.contasFixas.length === 0) {
+                dashContasList.innerHTML = `<p class="text-slate-500 text-center text-sm">Nenhuma conta cadastrada.</p>`;
+            } else {
+                dashContasList.innerHTML = state.contasFixas.slice(0, 4).map(c => `
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/40 border border-custom">
+                        <div>
+                            <p class="text-sm font-semibold text-white">${c.desc}</p>
+                            <p class="text-xs text-slate-400">Vence dia ${c.dia}</p>
+                        </div>
+                        <span class="text-sm font-bold ${c.pago ? 'text-emerald-400' : 'text-amber-400'}">${formatCurrency(c.valor)}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Renderizar Tabela de Contas Fixas
+            const tableContas = document.getElementById('table-contas-body');
+            tableContas.innerHTML = state.contasFixas.map(c => `
+                <tr class="hover:bg-slate-800/30">
+                    <td class="p-4 font-medium text-white">${c.desc}</td>
+                    <td class="p-4">Dia ${c.dia}</td>
+                    <td class="p-4 font-bold text-slate-200">${formatCurrency(c.valor)}</td>
+                    <td class="p-4">
+                        <button onclick="togglePagoConta(${c.id})" class="px-2.5 py-1 rounded-full text-xs font-semibold ${c.pago ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">
+                            ${c.pago ? 'Paga' : 'Pendente'}
+                        </button>
+                    </td>
+                    <td class="p-4 text-right">
+                        <button onclick="removerConta(${c.id})" class="text-red-400 hover:text-red-300 text-xs">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Renderizar Movimentações
+            const tableMov = document.getElementById('table-movimentacoes-body');
+            tableMov.innerHTML = state.movimentacoes.map(m => `
+                <tr class="hover:bg-slate-800/30">
+                    <td class="p-4 text-slate-400">${m.data}</td>
+                    <td class="p-4 uppercase text-xs font-bold ${m.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'}">${m.tipo}</td>
+                    <td class="p-4 font-medium text-white">${m.desc}</td>
+                    <td class="p-4"><span class="bg-slate-800 text-slate-300 px-2 py-1 rounded text-xs">${m.cat}</span></td>
+                    <td class="p-4 text-right font-bold ${m.tipo === 'receita' ? 'text-emerald-400' : 'text-red-400'}">${formatCurrency(m.valor)}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="removerMovimentacao(${m.id})" class="text-red-400 hover:text-red-300 text-xs">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('chartComprometimento').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#2563eb', '#1e293b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '80%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { tooltip: { enabled: false } }
+                }
+            });
+        }
+
+        function salvarSalarioBase() {
+            const val = parseFloat(document.getElementById('input-salario-base').value);
+            if(!isNaN(val)) {
+                state.salarioBase = val;
+                renderApp();
+                alert('Salário atualizado com sucesso!');
+            }
+        }
+
+        function togglePagoConta(id) {
+            const c = state.contasFixas.find(x => x.id === id);
+            if(c) {
+                c.pago = !c.pago;
+                renderApp();
+            }
+        }
+
+        function removerConta(id) {
+            state.contasFixas = state.contasFixas.filter(x => x.id !== id);
+            renderApp();
+        }
+
+        function removerMovimentacao(id) {
+            state.movimentacoes = state.movimentacoes.filter(x => x.id !== id);
+            renderApp();
+        }
+
+        function openModal() { document.getElementById('modal-transacao').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('modal-transacao').classList.add('hidden'); }
+        function openContaModal() { document.getElementById('modal-conta').classList.remove('hidden'); }
+        function closeContaModal() { document.getElementById('modal-conta').classList.add('hidden'); }
+
+        function salvarTransacao(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('trans-tipo').value;
+            const desc = document.getElementById('trans-desc').value;
+            const valor = parseFloat(document.getElementById('trans-valor').value);
+            const cat = document.getElementById('trans-cat').value;
+
+            state.movimentacoes.unshift({
+                id: Date.now(),
+                data: new Date().toISOString().split('T')[0],
+                tipo, desc, cat, valor
+            });
+
+            closeModal();
+            document.getElementById('form-transacao').reset();
+            renderApp();
+        }
+
+        function salvarContaFixa(e) {
+            e.preventDefault();
+            const desc = document.getElementById('conta-desc').value;
+            const dia = parseInt(document.getElementById('conta-venc').value);
+            const valor = parseFloat(document.getElementById('conta-valor').value);
+
+            state.contasFixas.push({
+                id: Date.now(),
+                desc, dia, valor, pago: false
+            });
+
+            closeContaModal();
+            document.getElementById('form-conta').reset();
+            renderApp();
+        }
+    </script>
+</body>
+</html>
